@@ -2,48 +2,67 @@
 import sys
 import re
 
-case_regex = re.compile('<係:([^>]+格)>')
-# mod_regex = re.compile('<係:([^>]+)>')
-# analysis_case_regex = re.compile('<解析格:([^>]+)>')
-# case_result_regex = re.compile('<格解析結果:([^:]+:[^:0-9]+)[0-9]*:([^>]+)>')
+mod_regex = re.compile('<係:([^>]+)>')
+analysis_case_regex = re.compile('<解析格:([^>]+)>')
+case_result_regex = re.compile('<格解析結果:([^:]+:[^:0-9]+)[0-9]*:([^>]+)>')
 norm_form_regex = re.compile('<正規化代表表記:([^>]+)>')
-pred_norm_form_regex = re.compile('<用言代表表記:([^>]+)>')
 
 def sentence_func(knp_lines):
-    last_basic_phrase = [line for line in knp_lines if line[0] == '+'][-1]
-    last_basic_phrase_num = -1
-    try:
-        last_basic_phrase_num = int(last_basic_phrase.split(' ')[1])
-    except:
-        raise Exception('Use -print-num option when use KNP')
+    last_basic_phrase=[line for line in knp_lines if line[0] == '+'][-1]
 
-    #文末の述語の正規化代表表記を出力
-    m_norm = norm_form_regex.search(last_basic_phrase)
-    if m_norm:
-        sys.stdout.write(m_norm.group(1) + " ")
-    else:
-        sys.stdout.write("NONE ")
+    case_result_match = case_result_regex.search(last_basic_phrase)
+    if case_result_match:
+        pred = case_result_match.group(1)
+        cases = case_result_match.group(2).split(';')
+        cases = [case for case in cases if case.split('/')[0] in ['ガ', 'ヲ', 'ニ', 'カラ']] #使う格をガ/ヲ/ニ/カラに限定
 
-    #文末の述語の用言代表表記を出力
-    m_pred_norm = pred_norm_form_regex.search(last_basic_phrase)
-    if m_pred_norm:
-        sys.stdout.write(m_pred_norm.group(1))
-    else:
-        sys.stdout.write("NONE")
+        bp_nums = [int(case.split('/')[3]) for case in cases if case.split('/')[3] != '-']
+        if len(bp_nums) != 0:
+            bp_num = max(bp_nums)
+            bp = [line for line in knp_lines if line.startswith("+ %d " % bp_num)][0]
 
-    dpnd_basic_phrases = [line for line in knp_lines if line[0] == '+' and line.split(' ')[2] == str(last_basic_phrase_num) + "D"]
+            #bpの正規化代表表記を取って、格と足す
+            #<係:マデ>とか
+            #KNPの格解析結果をどこまで信じるか…?
+            #解析格を利用しないことにした。
+            
+            case = ""
+            norm_form = ""
+            mod_regex_match = mod_regex.search(bp)
+            norm_form_regex_match = norm_form_regex.search(bp)
+            # analysis_case_regex_match = analysis_case_regex.search(bp)
+            analysis_case_regex_match = False #使わない
 
-    for dpnd_basic_phrase in dpnd_basic_phrases[::-1]:
-        m1 = case_regex.search(dpnd_basic_phrase)
-        if m1:
-            m2 = norm_form_regex.search(dpnd_basic_phrase)
-            if m2:
-                case = m1.group(1)
-                if case == "未格" and "<ハ>" in dpnd_basic_phrase:
-                    sys.stdout.write(" " + m2.group(1) + ":" + "未格_ハ")
+            if norm_form_regex_match:
+                if analysis_case_regex_match: #解析格がある場合
+                    case = analysis_case_regex_match.group(1)
+                    norm_form = norm_form_regex_match.group(1)
+                    print "%s:%s格 %s" % (norm_form, case, pred)
+                    return
+
+                elif mod_regex_match: #解析格がない場合
+                    case = mod_regex_match.group(1)
+                    norm_form = norm_form_regex_match.group(1)
+                    print "%s:%s %s" % (norm_form, case, pred)
+                    return
+
                 else:
-                    sys.stdout.write(" " + m2.group(1) + ":" + case)
-    print ""
+                    print "NONE0 %s" % pred
+                    return
+
+            else:
+                print "NONE1 %s" % pred
+                return
+
+        else:
+            print "NONE2 %s" % pred
+            return
+
+    else:
+        print "NONE3 %s" % pred
+        return
+
+    print "NONE 4"# % pred
     return
 
 def main():

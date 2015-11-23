@@ -11,5 +11,16 @@ if [ `hostname` != 'biscuit' ]; then
 fi
 
 str=$1
+{
+  ./shell/search_masho.sh $str
+  ./shell/search_si_masho.sh $str
+  ./shell/search_kudasai.sh $str
+  ./shell/search_si_te_kudasai.sh $str
+} | awk -F'\t' '{print $2"\t"$1}' > $$.txt
 
-cat <(./shell/search_4gram.sh $str | awk '{print $3" "$5}') <(./shell/search_5gram.sh $str | awk '{print $3" "$6}') <(./shell/search_kudasai_5gram.sh $str | awk '{print $3" "$6}') <(./shell/search_kudasai_6gram.sh $str | awk '{print $3" "$7}') | awk '{a[$1]+=$2} END{for(k in a) {print a[k]"\t"k}}' | sort -nr
+cat $$.txt | awk -F'\t' '{print $1}' > $$"_cnt.txt"
+cat $$.txt | shell/convert_to_baseform.sh > $$"_bf.txt"
+paste -d '\t' $$"_cnt.txt" $$"_bf.txt" | awk '{a[$2]+=$1} END{for(k in a) {print a[k]"\t"k}}' | sort -nr
+
+rm -rf $$"_cnt.txt" $$"_bf.txt" $$.txt
+

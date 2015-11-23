@@ -1,5 +1,20 @@
 #!/bin/zsh
 
+cat - |
+while read line; do
+  num=`echo $line | awk -F'\t' '{print $1}'`
+  str=`echo $line | awk -F'\t' '{print $2}'`
+
+  ans=`echo $str | tr -d ' '| mecab | tr '\t' ',' | grep -E ",動詞,自立,|,名詞,サ変接続," | tail -n1 | awk -F, '{print $8}'`
+  if [ "$ans" != "" ]; then
+    echo "$ans"
+  else
+    echo "NONE"
+  fi
+done
+
+exit
+
 cat - | awk '{print $2}' | mecab -F '%f[6]:%f[0]-%f[1] ' -U '%f[6]:未知語 ' --nbest 10 --eos-format '\n' --eon-format 'EON\n' \
   | grep -v  " [^$]" | tr  '\n' ' ' | sed -e 's/ \+/ /g' | sed -e 's/ EON /\nEON\n/g' \
   |  awk '
