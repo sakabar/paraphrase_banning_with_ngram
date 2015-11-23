@@ -7,8 +7,8 @@ if [ $# -ne 1 ];then
   exit 1
 fi
 
-n=5
 str=$1
+n=$[ `echo $str | tr ' ' '\n' | grep -c .` + 3] #(動詞と'て'と'ください'の分で+4)
 
 ngram_dir='/local/tsakaki/ngram/'$n'gms'
 if [ ! -d $ngram_dir ];then
@@ -17,4 +17,4 @@ if [ ! -d $ngram_dir ];then
 fi
 
 ngram_file=`cat $ngram_dir/*.idx <(echo "target\t"$str" " )  | LC_ALL=C sort -t $'\t' -k2,2 | grep -B1 "^target"|head -n1 | awk '{print $1}'`
-lv $ngram_dir/$ngram_file | LC_ALL=C grep "^"$str" " | awk '$6 == "ください" {print $0}' | awk '$4 == "し" {print $0}' | awk '$5 == "て" {print $0}' 
+lv $ngram_dir/$ngram_file | LC_ALL=C grep "^""$str " | awk '$(NF-1) == "ください" {print $0}' | awk '$(NF-3) == "し" {print $0}' | awk '$(NF-2) == "て" {print $0}'  #NF列目はngram頻度
