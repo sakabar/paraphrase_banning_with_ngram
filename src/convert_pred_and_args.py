@@ -1,6 +1,7 @@
 #coding:utf-8
 import sys
 import jctconv
+import re
 
 def format_arg_noun(noun):
     ans = ""
@@ -25,7 +26,9 @@ def format_arg_noun(noun):
 def format_arg_case(case):
     ans = ""
 
-    if case == "未格":
+    #'hoge:同格未格'の場合がある
+    #「人間以外の被造物に対してお辞儀などしてはならない。」
+    if "未格" in case:
         ans = 'は'
     else:
         case_unicode = case.replace('格', '').decode('utf-8') #'格'の文字は取る

@@ -5,7 +5,7 @@ if [ $# -ne 1 ]; then
   exit 1
 fi
 
-if [ `hostname` != 'biscuit' ]; then
+if [ `hostname` != 'biscuit' ] && [ `hostname` != 'basil' ]; then
   echo "run at biscuit"
   exit 1
 fi
